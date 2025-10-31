@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIKARA - AI Teaching Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.4); }
+        }
+        
+        .prompt-chip {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .prompt-chip:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+            transform: translateY(-2px);
+        }
+
+        .chat-input {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white font-['Inter']">
+    <div class="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-screen">
+        <!-- Logo and Branding -->
+        <div class="mb-8 text-center">
+            <img src="https://firebasestorage.googleapis.com/v0/b/widecanvas-d0dd4.appspot.com/o/logos%2FPicsart_25-10-31_19-34-16-069.png?alt=media&token=17cf7cea-4aa1-4260-9a6e-31740bf2933e" 
+                 alt="AIKARA Logo" 
+                 class="w-32 h-32 md:w-40 md:h-40 mx-auto mb-4">
+            <h1 class="logo-text text-4xl md:text-5xl font-bold mb-2">AIKARA</h1>
+            <p class="text-gray-300 text-lg md:text-xl">AI-Powered Teaching Assistant</p>
+        </div>
+
+        <!-- Suggested Prompts -->
+        <div class="flex flex-wrap justify-center gap-3 mb-6 w-full max-w-2xl">
+            <button class="prompt-chip px-4 py-2 rounded-full border border-indigo-500/30 text-sm hover:border-indigo-500">
+                Start a Spanish lesson
+            </button>
+            <button class="prompt-chip px-4 py-2 rounded-full border border-indigo-500/30 text-sm hover:border-indigo-500">
+                Explain quantum physics
+            </button>
+            <button class="prompt-chip px-4 py-2 rounded-full border border-indigo-500/30 text-sm hover:border-indigo-500">
+                Help with my essay
+            </button>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="w-full max-w-2xl">
+            <div id="chat-messages" class="mb-6 space-y-4 h-[400px] overflow-y-auto p-4"></div>
+            
+            <form id="chat-form" class="relative">
+                <div class="chat-input flex items-center rounded-lg border border-indigo-500/30 p-2" style="animation: glow 2s infinite;">
+                    <button type="button" id="mic-button" class="p-2 text-gray-400 hover:text-indigo-400">
+                        <i class="bi bi-mic text-xl"></i>
+                    </button>
+                    <input type="text" 
+                           id="user-input" 
+                           placeholder="Chat with AIKARA..." 
+                           class="flex-1 bg-transparent border-none focus:outline-none px-4 py-2">
+                    <button type="submit" class="p-2 text-gray-400 hover:text-indigo-400">
+                        <i class="bi bi-send text-xl"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const micButton = document.getElementById('mic-button');
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            appendMessage('user', message);
+            userInput.value = '';
+
+            // Show loading state
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'flex items-center space-x-2 text-gray-400';
+            loadingDiv.innerHTML = '<span>AIKARA is thinking</span><span class="animate-pulse">...</span>';
+            chatMessages.appendChild(loadingDiv);
+
+            try {
+                const response = await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/ai', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ZDPe2AN2nUTBEgIIu05wZN14BjG2',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: [{
+                            role: 'user',
+                            content: [{
+                                type: 'text',
+                                text: message
+                            }]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                loadingDiv.remove();
+                appendMessage('assistant', data.message);
+
+            } catch (error) {
+                loadingDiv.remove();
+                appendMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+            }
+        });
+
+        function appendMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex items-start space-x-3 ${role === 'user' ? 'justify-end' : ''}`;
+            
+            const message = document.createElement('div');
+            message.className = `rounded-lg p-3 max-w-[80%] ${role === 'user' ? 'bg-indigo-600' : 'bg-gray-700'}`;
+            message.textContent = content;
+            
+            if (role === 'user') {
+                messageDiv.appendChild(message);
+            } else {
+                const avatar = document.createElement('div');
+                avatar.className = 'w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-sm font-bold';
+                avatar.textContent = 'A';
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(message);
+            }
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Simple speech recognition implementation
+        micButton.addEventListener('click', () => {
+            if ('webkitSpeechRecognition' in window) {
+                const recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                recognition.onstart = () => {
+                    micButton.classList.add('text-red-500');
+                };
+
+                recognition.onend = () => {
+                    micButton.classList.remove('text-red-500');
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    userInput.value = transcript;
+                };
+
+                recognition.start();
+            } else {
+                alert('Speech recognition is not supported in your browser.');
+            }
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
